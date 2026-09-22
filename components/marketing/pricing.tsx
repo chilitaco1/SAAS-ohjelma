@@ -11,7 +11,7 @@ const plans: PricingPlan[] = [];
 
 export function Pricing() {
   return (
-    <section id="hinnasto" className="scroll-mt-20 px-4 py-16 md:px-8 md:py-24">
+    <section id="hinnasto" className="scroll-mt-20 px-4 py-12 md:px-8 md:py-16">
       <div className="mx-auto max-w-5xl">
         <h2 className="text-2xl font-semibold tracking-tight">
           Yksinkertainen hinnoittelu

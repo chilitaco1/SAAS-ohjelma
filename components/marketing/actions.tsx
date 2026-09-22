@@ -5,26 +5,32 @@ import { cn } from "@/lib/utils";
 
 type LinkProps = {
   className?: string;
+  size?: "default" | "lg";
 };
 
-export function StartForFreeLink({ className }: LinkProps) {
+export function StartForFreeLink({ className, size = "lg" }: LinkProps) {
   return (
     <Link
       href="/signup"
-      className={cn(buttonVariants({ size: "lg" }), "h-11 px-4 text-base", className)}
+      className={cn(
+        buttonVariants({ size }),
+        size === "lg" && "h-11 px-4 text-base",
+        className,
+      )}
     >
       Aloita ilmaiseksi
     </Link>
   );
 }
 
-export function SignInLink({ className }: LinkProps) {
+export function SignInLink({ className, size = "lg" }: LinkProps) {
   return (
     <Link
       href="/login"
       className={cn(
-        buttonVariants({ variant: "outline", size: "lg" }),
-        "h-11 bg-card px-4 text-base",
+        buttonVariants({ variant: "outline", size }),
+        "bg-card",
+        size === "lg" && "h-11 px-4 text-base",
         className,
       )}
     >

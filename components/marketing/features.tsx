@@ -28,22 +28,22 @@ const features: { title: string; description: string; icon: LucideIcon }[] = [
 
 export function Features() {
   return (
-    <section className="px-4 pb-16 md:px-8 md:pb-24" aria-labelledby="ominaisuudet">
+    <section className="px-4 pb-12 md:px-8 md:pb-16" aria-labelledby="ominaisuudet">
       <div className="mx-auto max-w-5xl">
         <h2 id="ominaisuudet" className="text-2xl font-semibold tracking-tight">
           Mitä Selko auttaa tekemään
         </h2>
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mt-6 grid gap-3 sm:grid-cols-2">
           {features.map((feature) => {
             const Icon = feature.icon;
 
             return (
               <Card key={feature.title}>
                 <CardHeader>
-                  <div className="flex size-10 items-center justify-center rounded-lg bg-accent text-primary">
-                    <Icon />
-                  </div>
-                  <h3 className="text-base font-medium">{feature.title}</h3>
+                  <h3 className="flex items-center gap-2 text-base font-medium">
+                    <Icon className="text-primary" />
+                    {feature.title}
+                  </h3>
                 </CardHeader>
                 <CardContent className="text-sm leading-6 text-muted-foreground">
                   {feature.description}

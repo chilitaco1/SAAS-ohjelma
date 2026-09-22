@@ -11,7 +11,7 @@ const links = [
 export function MarketingFooter() {
   return (
     <footer className="border-t border-border bg-card">
-      <div className="mx-auto flex max-w-5xl flex-col gap-4 px-4 py-8 sm:flex-row sm:items-center sm:justify-between md:px-8">
+      <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-6 sm:flex-row sm:items-center sm:justify-between md:px-8">
         <p className="text-sm text-muted-foreground">
           © 2026 {APP_NAME}. Kaikki oikeudet pidätetään.
         </p>

@@ -78,7 +78,7 @@ export function MarketingHeader() {
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
-          <SignInLink />
+          <SignInLink size="default" />
           <StartForFreeLink />
         </div>
 

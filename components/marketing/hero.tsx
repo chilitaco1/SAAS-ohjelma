@@ -1,51 +1,64 @@
 import { StartForFreeLink, SignInLink } from "@/components/marketing/actions";
+import { Card, CardHeader } from "@/components/ui/card";
 import { APP_NAME } from "@/lib/brand";
 import { formatEuro } from "@/lib/money";
 
+const previewStats = [
+  { label: "Laskutettu tässä kuussa", value: formatEuro(0) },
+  { label: "Avoimet laskut", value: "0" },
+];
+
 export function Hero() {
   return (
-    <section className="px-4 py-16 md:px-8 md:py-24">
-      <div className="mx-auto grid max-w-5xl items-center gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
+    <section className="px-4 py-12 md:px-8 md:py-16">
+      <div className="mx-auto grid max-w-5xl items-center gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)] lg:gap-12">
         <div className="max-w-xl">
-          <h1 className="text-4xl font-semibold tracking-tight text-balance text-foreground md:text-5xl">
+          <h1 className="text-3xl font-semibold tracking-tight text-balance text-foreground md:text-4xl">
             Laskutus ilman turhaa säätöä
           </h1>
-          <p className="mt-5 text-base leading-7 text-muted-foreground md:text-lg">
+          <p className="mt-3 text-sm leading-6 text-muted-foreground md:text-base">
             Selko tekee laskutuksesta ja yrityksen arjen hallinnasta
             yksinkertaista. Luo laskut, hallitse asiakkaita ja pidä ALV-laskenta
             helposti mukana.
           </p>
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
             <StartForFreeLink />
             <SignInLink />
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-xl bg-card ring-1 ring-foreground/10">
-          <div className="flex min-h-64">
-            <div className="hidden w-36 shrink-0 flex-col gap-1 bg-sidebar p-4 text-sm text-sidebar-foreground sm:flex">
-              <p className="mb-3 font-semibold">{APP_NAME}</p>
-              <p className="rounded-lg bg-sidebar-accent px-2 py-1.5 text-sidebar-accent-foreground">
+        <div className="overflow-hidden rounded-xl bg-background ring-1 ring-foreground/10">
+          <div className="flex">
+            <div className="hidden w-40 shrink-0 flex-col gap-1 bg-sidebar p-3 text-sm text-sidebar-foreground sm:flex">
+              <p className="mb-2 flex items-center gap-2 px-2 font-semibold">
+                <span className="flex size-6 items-center justify-center rounded-md bg-sidebar-accent text-xs text-sidebar-accent-foreground">
+                  S
+                </span>
+                {APP_NAME}
+              </p>
+              <p className="rounded-lg bg-sidebar-accent px-3 py-2 text-sidebar-accent-foreground">
                 Etusivu
               </p>
-              <p className="px-2 py-1.5 text-sidebar-foreground/75">Laskut</p>
-              <p className="px-2 py-1.5 text-sidebar-foreground/75">Asiakkaat</p>
+              <p className="px-3 py-2 text-sidebar-foreground/80">Laskut</p>
+              <p className="px-3 py-2 text-sidebar-foreground/80">Asiakkaat</p>
             </div>
-            <div className="flex flex-1 flex-col justify-center p-5 sm:p-6">
-              <p className="text-sm text-muted-foreground">Laskutettu tässä kuussa</p>
-              <p className="mt-1 text-3xl font-semibold tracking-tight tabular-nums">
-                {formatEuro(125_000)}
-              </p>
-              <div className="mt-5 rounded-lg border border-border px-3 py-3">
-                <div className="flex items-start justify-between gap-3 text-sm">
-                  <div>
-                    <p className="font-medium">INV-1001</p>
-                    <p className="text-muted-foreground">Mäkinen Oy</p>
-                  </div>
-                  <p className="font-medium tabular-nums">{formatEuro(125_000)}</p>
-                </div>
+            <div className="min-w-0 flex-1 p-4">
+              <p className="text-sm font-medium">Etusivu</p>
+              <div className="mt-3 grid gap-3">
+                {previewStats.map((stat) => (
+                  <Card key={stat.label}>
+                    <CardHeader>
+                      <p className="text-sm text-muted-foreground">{stat.label}</p>
+                      <p className="text-2xl font-semibold tracking-tight tabular-nums">
+                        {stat.value}
+                      </p>
+                    </CardHeader>
+                  </Card>
+                ))}
               </div>
-              <p className="mt-3 text-xs text-muted-foreground">Esimerkki näkymästä</p>
+              <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                Esimerkki ohjelman näkymästä
+              </p>
             </div>
           </div>
         </div>
