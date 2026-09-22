@@ -1,6 +1,8 @@
-# Selko
+# SAAS-ohjelma
 
-Selko is a simple invoicing app for sole traders and small businesses in Finland. The interface is in Finnish. Money is shown in euros, for example `5,90 €`.
+Laskutusohelma
+
+Selko is the name shown in the app for now. It is a simple invoicing app for sole traders and small businesses in Finland. The interface is in Finnish. Money is shown in euros, for example `5,90 €`.
 
 The name Selko is a working name. To rename the app, change `APP_NAME` in `lib/brand.ts`.
 
