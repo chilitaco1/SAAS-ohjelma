@@ -35,17 +35,19 @@ Leave that terminal running while you use the app. Stop it with Ctrl+C.
 
 ## What you should see
 
-1. A green sidebar with Etusivu, Laskut, Asiakkaat, Tuotteet, Yritys, and Asetukset.
-2. On a phone-width window, the sidebar is hidden and a menu button opens it.
-3. The dashboard shows four figures, all zero, and a green **Luo lasku** button.
-4. **Luo lasku** opens a page that explains the future invoice form. It does not save anything.
-5. Amounts use Finnish formatting, such as `0,00 €`.
+1. The public homepage in Finnish, with **Aloita ilmaiseksi**.
+2. The working tool at [http://localhost:43123/etusivu](http://localhost:43123/etusivu): a green sidebar with Etusivu, Laskut, Asiakkaat, Tuotteet, Yritys, and Asetukset.
+3. On a phone-width window, the sidebar is hidden and a menu button opens it.
+4. The dashboard shows four figures, all zero, and a green **Luo lasku** button.
+5. **Luo lasku** opens a page that explains the future invoice form. It does not save anything.
+6. Amounts use Finnish formatting, such as `0,00 €`.
 
 ## Pages
 
 | Address | Page |
 | --- | --- |
-| `/` | Etusivu |
+| `/` | Public homepage |
+| `/etusivu` | Etusivu, the working dashboard |
 | `/laskut` | Laskut |
 | `/laskut/uusi` | Uusi lasku |
 | `/asiakkaat` | Asiakkaat |

@@ -19,7 +19,7 @@ import { cn } from "@/lib/utils";
 function BrandLink({ onNavigate }: { onNavigate?: () => void }) {
   return (
     <Link
-      href="/"
+      href="/etusivu"
       onClick={onNavigate}
       className="flex items-center gap-2 rounded-lg px-2 py-1 font-semibold tracking-tight focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
     >

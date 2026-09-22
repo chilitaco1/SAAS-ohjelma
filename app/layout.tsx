@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Source_Sans_3 } from "next/font/google";
 import type { ReactNode } from "react";
 
-import { AppShell } from "@/components/app-shell";
 import { APP_DESCRIPTION, APP_NAME } from "@/lib/brand";
 
 import "./globals.css";
@@ -26,10 +25,8 @@ export default function RootLayout({
   children: ReactNode;
 }) {
   return (
-    <html lang="fi" className={`${sans.variable} h-full antialiased`}>
-      <body className="min-h-full bg-background text-foreground">
-        <AppShell>{children}</AppShell>
-      </body>
+    <html lang="fi" className={`${sans.variable} h-full scroll-smooth antialiased`}>
+      <body className="min-h-full bg-background text-foreground">{children}</body>
     </html>
   );
 }
