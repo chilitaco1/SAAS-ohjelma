@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Sheet,
   SheetContent,
@@ -92,9 +92,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <header className="flex items-center gap-3 border-b border-border bg-card px-4 py-3 md:hidden">
           <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
             <SheetTrigger
-              render={
-                <Button variant="outline" size="icon" aria-label="Avaa valikko" />
-              }
+              aria-label="Avaa valikko"
+              className={cn(buttonVariants({ variant: "outline", size: "icon" }))}
             >
               <Menu />
             </SheetTrigger>
