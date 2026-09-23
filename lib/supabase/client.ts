@@ -1,0 +1,14 @@
+import { createBrowserClient } from "@supabase/ssr";
+
+/**
+ * Supabase client for the browser (Client Components).
+ *
+ * `createBrowserClient` returns a singleton, so calling this repeatedly is
+ * cheap and always hands back the same instance.
+ */
+export function createClient() {
+  return createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
+}
