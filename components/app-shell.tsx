@@ -84,7 +84,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <NavLinks pathname={pathname} />
         </nav>
         <p className="px-6 pb-6 text-xs leading-5 text-sidebar-foreground/70">
-          Kirjautuminen lisätään seuraavaksi.
+          Voit kirjautua ulos Asetukset-sivulta.
         </p>
       </aside>
 

@@ -1,30 +1,49 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { StartForFreeLink } from "@/components/marketing/actions";
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { LoginForm } from "@/components/auth/login-form";
 
 export const metadata: Metadata = {
   title: "Kirjaudu sisään",
 };
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; redirectTo?: string }>;
+}) {
+  const params = await searchParams;
+  const redirectTo =
+    params.redirectTo && params.redirectTo.startsWith("/")
+      ? params.redirectTo
+      : undefined;
+
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-6 px-4 py-16 md:px-8 md:py-24">
+    <div className="mx-auto flex max-w-md flex-col gap-6 px-4 py-16 md:px-8 md:py-24">
       <div>
         <h1 className="text-3xl font-semibold tracking-tight">Kirjaudu sisään</h1>
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
-          Kirjautuminen ei ole vielä käytössä. Tällä sivulla ei voi vielä antaa
-          sähköpostia tai salasanaa.
+          Kirjaudu sisään sähköpostilla ja salasanalla.
         </p>
       </div>
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <StartForFreeLink />
-        <Link href="/" className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11 px-4 text-base")}>
-          Takaisin etusivulle
+
+      {params.error === "auth" ? (
+        <p
+          role="alert"
+          className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive"
+        >
+          Linkki oli virheellinen tai vanhentunut. Yritä uudelleen.
+        </p>
+      ) : null}
+
+      <LoginForm redirectTo={redirectTo} />
+
+      <p className="text-sm text-muted-foreground">
+        Ei vielä tiliä?{" "}
+        <Link href="/signup" className="font-medium text-primary hover:underline">
+          Luo tili
         </Link>
-      </div>
+      </p>
     </div>
   );
 }
