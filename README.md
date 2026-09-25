@@ -29,14 +29,14 @@ npm install
 npm run dev
 ```
 
-3. Open [http://localhost:43123](http://localhost:43123) in your browser.
+3. Open [http://localhost:43124](http://localhost:43124) in your browser.
 
 Leave that terminal running while you use the app. Stop it with Ctrl+C.
 
 ## What you should see
 
 1. The public homepage in Finnish, with **Aloita ilmaiseksi**.
-2. The working tool at [http://localhost:43123/etusivu](http://localhost:43123/etusivu): a green sidebar with Etusivu, Laskut, Asiakkaat, Tuotteet, Yritys, and Asetukset.
+2. The working tool at [http://localhost:43124/etusivu](http://localhost:43124/etusivu): a green sidebar with Etusivu, Laskut, Asiakkaat, Tuotteet, Yritys, and Asetukset.
 3. On a phone-width window, the sidebar is hidden and a menu button opens it.
 4. The dashboard shows four figures, all zero, and a green **Luo lasku** button.
 5. **Luo lasku** opens a page that explains the future invoice form. It does not save anything.
