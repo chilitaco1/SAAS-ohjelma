@@ -131,6 +131,18 @@ export function SentInvoice({ invoice, seller, notice, error }: SentInvoiceProps
             {invoice.interest_rate ? `${invoice.interest_rate.replace(".", ",")} %` : "—"}
           </dd>
         </div>
+        {invoice.paid_at ? (
+          <div>
+            <dt className="text-muted-foreground">Maksupäivä</dt>
+            <dd className="mt-1 font-medium">{formatFinnishDate(invoice.paid_at)}</dd>
+          </div>
+        ) : null}
+        {invoice.status === "canceled" ? (
+          <div>
+            <dt className="text-muted-foreground">Tila</dt>
+            <dd className="mt-1 font-medium text-destructive">PERUTTU</dd>
+          </div>
+        ) : null}
       </dl>
     </div>
   );

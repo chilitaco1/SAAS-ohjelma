@@ -3,10 +3,10 @@ import Link from "next/link";
 
 import { CreateInvoiceLink } from "@/components/create-invoice-link";
 import { EmptyState } from "@/components/empty-state";
+import { InvoiceStatusBadge } from "@/components/invoices/invoice-status-badge";
 import { PageHeader } from "@/components/page-header";
-import { decimalToScaled, formatFinnishDate } from "@/lib/invoices/calculate";
+import { decimalToScaled, formatFinnishDate, todayInHelsinki } from "@/lib/invoices/calculate";
 import { listInvoices } from "@/lib/invoices/queries";
-import { invoiceStatusLabel } from "@/lib/invoices/types";
 import { formatEuro } from "@/lib/money";
 
 export const metadata: Metadata = {
@@ -18,6 +18,7 @@ const SETUP_HINT =
 
 export default async function InvoicesPage() {
   const result = await listInvoices();
+  const today = todayInHelsinki();
 
   return (
     <div className="flex flex-col gap-8">
@@ -54,8 +55,12 @@ export default async function InvoicesPage() {
                     {invoice.customer_name ?? "Ei asiakasta"}
                     {invoice.issue_date ? ` · ${formatFinnishDate(invoice.issue_date)}` : ""}
                   </span>
-                  <span className="text-sm text-muted-foreground">
-                    {invoiceStatusLabel[invoice.status]}
+                  <span className="text-sm">
+                    <InvoiceStatusBadge
+                      status={invoice.status}
+                      dueDate={invoice.due_date}
+                      today={today}
+                    />
                   </span>
                   <span className="text-sm font-medium tabular-nums sm:text-right">
                     {formatEuro(decimalToScaled(invoice.total_including_vat, 2))}

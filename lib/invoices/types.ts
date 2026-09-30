@@ -18,6 +18,21 @@ export const invoiceStatusLabel: Record<InvoiceStatus, string> = {
 };
 
 /**
+ * Label shown in lists. "Erääntynyt" is not stored: a sent invoice whose
+ * due date is before today (Helsinki) is overdue.
+ */
+export function invoiceDisplayLabel(
+  status: InvoiceStatus,
+  dueDate: string | null,
+  today: string,
+): string {
+  if (status === "sent" && dueDate !== null && dueDate < today) {
+    return "Erääntynyt";
+  }
+  return invoiceStatusLabel[status];
+}
+
+/**
  * VAT rates the form is allowed to use.
  * 25.5% is the Finnish standard rate. 14% and 10% are the reduced rates.
  * 0% is the zero rate (not the same thing as a sale outside VAT).
@@ -51,8 +66,14 @@ export interface Invoice {
   interest_rate: string | null;
   /** Toimituspäivä. Optional. */
   delivery_date: string | null;
-  /** Ostajan nimi. */
+  /** Ostajan nimi. Copied from the customer when they are chosen. */
   customer_name: string | null;
+  /**
+   * Saved customer this invoice was built from.
+   * Null on older invoices, and if that customer is later deleted.
+   * The name and address below are the copy and do not follow later edits.
+   */
+  customer_id: string | null;
   /**
    * Ostajan Y-tunnus, stored in the column name from the schema
    * (`customer_y_tunus`). Format 1234567-8.
@@ -80,6 +101,12 @@ export interface Invoice {
   seller_iban: string | null;
   seller_bic_swift: string | null;
   seller_billing_address: string | null;
+  /** Calendar date the invoice was marked paid. Null unless status is paid. */
+  paid_at: string | null;
+  /** When a sent invoice was cancelled. The row is kept. */
+  cancelled_at: string | null;
+  /** When the PDF email was last sent. Null if it has not been sent. */
+  email_sent_at: string | null;
   /** When the row was created. */
   created_at: string;
 }
@@ -92,6 +119,11 @@ export interface CompanySettings {
   iban: string | null;
   bic_swift: string | null;
   billing_address: string | null;
+  /**
+   * When true, new products start at the standard 25.5% VAT rate.
+   * Missing means the column has not been added yet; treat that as registered.
+   */
+  vat_registered?: boolean;
 }
 
 export interface InvoiceItem {

@@ -230,3 +230,15 @@ export function formatFinnishDate(isoDate: string): string {
     timeZone: "UTC",
   }).format(new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]))));
 }
+
+/** A stored timestamp, shown as a Finnish calendar date in Helsinki. */
+export function formatFinnishTimestamp(value: string): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return formatFinnishDate(value.slice(0, 10));
+  }
+
+  return new Intl.DateTimeFormat("fi-FI", {
+    timeZone: "Europe/Helsinki",
+  }).format(date);
+}

@@ -117,6 +117,7 @@ export async function getInvoice(id: string): Promise<InvoiceWithItems | null> {
       ? null
       : asDecimal(row.interest_rate),
     delivery_date: asText(row.delivery_date),
+    customer_id: asText(row.customer_id),
     customer_name: asText(row.customer_name),
     customer_y_tunus: asText(row.customer_y_tunus),
     customer_address: asText(row.customer_address),
@@ -129,6 +130,9 @@ export async function getInvoice(id: string): Promise<InvoiceWithItems | null> {
     seller_iban: asText(row.seller_iban),
     seller_bic_swift: asText(row.seller_bic_swift),
     seller_billing_address: asText(row.seller_billing_address),
+    paid_at: asText(row.paid_at),
+    cancelled_at: asText(row.cancelled_at),
+    email_sent_at: asText(row.email_sent_at),
     created_at: String(row.created_at),
     invoice_items: items.map((item) => {
       const line = item as Record<string, unknown>;
@@ -158,16 +162,31 @@ function toCompanySettings(row: Record<string, unknown>): CompanySettings {
     iban: asText(row.iban),
     bic_swift: asText(row.bic_swift),
     billing_address: asText(row.billing_address),
+    vat_registered: row.vat_registered === false ? false : row.vat_registered === true ? true : undefined,
   };
 }
 
 /** The signed-in user's company row, or null if it has not been saved yet. */
 export async function getCompanySettings(): Promise<CompanySettings | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  let data: Record<string, unknown> | null = null;
+  let error: { message: string } | null = null;
+
+  const first = await supabase
     .from("company_settings")
-    .select("user_id, company_name, y_tunus, iban, bic_swift, billing_address")
+    .select("user_id, company_name, y_tunus, iban, bic_swift, billing_address, vat_registered")
     .maybeSingle();
+  data = first.data as Record<string, unknown> | null;
+  error = first.error;
+
+  if (error && /vat_registered/i.test(error.message)) {
+    const retry = await supabase
+      .from("company_settings")
+      .select("user_id, company_name, y_tunus, iban, bic_swift, billing_address")
+      .maybeSingle();
+    data = retry.data as Record<string, unknown> | null;
+    error = retry.error;
+  }
 
   if (error || !data) {
     return null;

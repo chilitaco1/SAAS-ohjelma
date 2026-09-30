@@ -1,10 +1,19 @@
 "use client";
 
+import { Dialog } from "@base-ui/react/dialog";
 import { useActionState, useMemo, useState } from "react";
+import Link from "next/link";
 
-import { markInvoicePaid, saveInvoice, type InvoiceActionState } from "@/app/actions/invoices";
+import {
+  deleteInvoiceDraft,
+  markInvoicePaid,
+  saveInvoice,
+  type InvoiceActionState,
+} from "@/app/actions/invoices";
 import { InvoiceLines } from "@/components/invoices/invoice-lines";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { formatCustomerAddress } from "@/lib/catalog/format";
+import type { Customer, Product } from "@/lib/catalog/types";
 import { addDays } from "@/lib/invoices/calculate";
 import type { InvoiceFormValues } from "@/lib/invoices/form-values";
 import { formatReferenceNumber } from "@/lib/invoices/reference";
@@ -25,6 +34,9 @@ const labelClassName = "text-sm font-medium text-foreground";
 type InvoiceFormProps = {
   initial: InvoiceFormValues;
   notice?: string;
+  customers?: Customer[];
+  products?: Product[];
+  catalogMissing?: boolean;
 };
 
 /**
@@ -33,7 +45,13 @@ type InvoiceFormProps = {
  * A published invoice is shown read-only: Finnish bookkeeping does not allow
  * changing an issued invoice.
  */
-export function InvoiceForm({ initial, notice }: InvoiceFormProps) {
+export function InvoiceForm({
+  initial,
+  notice,
+  customers = [],
+  products = [],
+  catalogMissing = false,
+}: InvoiceFormProps) {
   const [state, formAction, pending] = useActionState(saveInvoice, initialState);
   const readOnly = initial.status !== null && initial.status !== "draft";
 
@@ -43,10 +61,35 @@ export function InvoiceForm({ initial, notice }: InvoiceFormProps) {
   const [interestRate, setInterestRate] = useState(initial.interestRate);
   const [referenceNumber, setReferenceNumber] = useState(initial.referenceNumber);
   const [customerName, setCustomerName] = useState(initial.customerName);
+  const [customerId, setCustomerId] = useState(initial.customerId);
   const [customerBusinessId, setCustomerBusinessId] = useState(initial.customerBusinessId);
   const [customerEmail, setCustomerEmail] = useState(initial.customerEmail);
   const [customerAddress, setCustomerAddress] = useState(initial.customerAddress);
+  const [customerQuery, setCustomerQuery] = useState("");
+  const [replacingCustomer, setReplacingCustomer] = useState(false);
   const [rows, setRows] = useState(initial.rows);
+
+  const matchingCustomers = useMemo(() => {
+    const needle = customerQuery.trim().toLocaleLowerCase("fi");
+    if (!needle) {
+      return customers;
+    }
+    return customers.filter((customer) => {
+      const name = customer.name.toLocaleLowerCase("fi");
+      const businessId = (customer.business_id ?? "").toLocaleLowerCase("fi");
+      return name.includes(needle) || businessId.includes(needle);
+    });
+  }, [customerQuery, customers]);
+
+  function chooseCustomer(customer: Customer) {
+    setCustomerId(customer.id);
+    setCustomerName(customer.name);
+    setCustomerBusinessId(customer.business_id ?? "");
+    setCustomerEmail(customer.email ?? "");
+    setCustomerAddress(formatCustomerAddress(customer));
+    setCustomerQuery("");
+    setReplacingCustomer(false);
+  }
 
   const dueDate = useMemo(() => {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(issueDate) || !/^\d{1,3}$/.test(paymentTermsDays)) {
@@ -55,11 +98,14 @@ export function InvoiceForm({ initial, notice }: InvoiceFormProps) {
     return addDays(issueDate, Number(paymentTermsDays));
   }, [issueDate, paymentTermsDays]);
 
+  const deleteFormId = initial.id ? `delete-draft-${initial.id}` : "";
+
   return (
-    <form action={formAction} className="flex flex-col gap-6">
+    <>
+    <form action={formAction} className="flex flex-col gap-8">
       {initial.id ? <input type="hidden" name="id" value={initial.id} /> : null}
 
-      {notice ? (
+      {notice && !notice.startsWith("Luonnos tallennettiin") ? (
         <p className="rounded-lg bg-accent px-3 py-2 text-sm text-accent-foreground" role="status">
           {notice}
         </p>
@@ -84,10 +130,7 @@ export function InvoiceForm({ initial, notice }: InvoiceFormProps) {
         </div>
       ) : (
         <p className="text-sm leading-6 text-muted-foreground">
-          Luonnoksella ei ole laskunumeroa. Numero ja viitenumero syntyvät, kun
-          julkaiset laskun. Julkaistua laskua ei voi enää muuttaa. Myyjän nimi
-          ja Y-tunnus tulevat myöhemmin Yritys-sivulta. Ne kuuluvat viralliseen
-          laskuun.
+          Luonnoksella ei ole vielä laskunumeroa. Numero syntyy, kun julkaiset laskun.
         </p>
       )}
 
@@ -184,69 +227,95 @@ export function InvoiceForm({ initial, notice }: InvoiceFormProps) {
         </div>
       </section>
 
-      {/* Ostajan tiedot. Y-tunnus on valinnainen, jos ostaja on yksityishenkilö. */}
+      {/* Ostaja valitaan tallennetuista asiakkaista. Lasku kopioi tiedot itselleen. */}
       <section className="rounded-xl bg-card px-5 py-5 ring-1 ring-foreground/10">
-        <h2 className="text-base font-medium">Asiakas</h2>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <label htmlFor="customerName" className={labelClassName}>
-              Nimi
-            </label>
-            <input
-              id="customerName"
-              name="customerName"
-              value={customerName}
-              disabled={readOnly}
-              onChange={(event) => setCustomerName(event.target.value)}
-              className={fieldClassName}
-            />
+        <h2 className="text-base font-medium">Laskutettava asiakas</h2>
+        <input type="hidden" name="customerId" value={customerId} />
+        <input type="hidden" name="customerName" value={customerName} />
+        <input type="hidden" name="customerBusinessId" value={customerBusinessId} />
+        <input type="hidden" name="customerEmail" value={customerEmail} />
+        <input type="hidden" name="customerAddress" value={customerAddress} />
+
+        {readOnly ? (
+          <CustomerSnapshot
+            name={customerName}
+            businessId={customerBusinessId}
+            email={customerEmail}
+            address={customerAddress}
+            customer={null}
+          />
+        ) : (
+          <div className="mt-4 flex flex-col gap-3">
+            {customerName && !replacingCustomer ? (
+              <SelectedCustomer
+                name={customerName}
+                businessId={customerBusinessId}
+                email={customerEmail}
+                address={customerAddress}
+                customer={customers.find((customer) => customer.id === customerId) ?? null}
+                editHref={/^[0-9a-f-]{36}$/i.test(customerId) ? `/asiakkaat?muokkaa=${customerId}` : null}
+                onReplace={() => setReplacingCustomer(true)}
+              />
+            ) : catalogMissing ? (
+              <p className="text-sm text-muted-foreground">
+                Asiakasluetteloa ei ole vielä luotu. Aja Supabasessa tiedosto
+                supabase/migrations/20260927200000_customers_products.sql.
+              </p>
+            ) : customers.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                Ei vielä asiakkaita.{" "}
+                <Link href="/asiakkaat" className="text-primary underline-offset-4 hover:underline">
+                  Lisää asiakas
+                </Link>{" "}
+                ennen laskua.
+              </p>
+            ) : (
+              <>
+                <label htmlFor="customer-search" className={labelClassName}>
+                  Hae asiakasta
+                </label>
+                <input
+                  id="customer-search"
+                  value={customerQuery}
+                  onChange={(event) => setCustomerQuery(event.target.value)}
+                  placeholder="Nimi tai Y-tunnus..."
+                  className={fieldClassName}
+                />
+                {customerQuery.trim() ? (
+                  matchingCustomers.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Ei osumia.</p>
+                  ) : (
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">Hakutulokset</p>
+                      <ul className="mt-1.5 flex max-h-40 flex-col gap-2 overflow-y-auto">
+                        {matchingCustomers.map((customer) => (
+                          <li key={customer.id}>
+                            <button
+                              type="button"
+                              onClick={() => chooseCustomer(customer)}
+                              className="flex w-full flex-col rounded-lg border border-border bg-card px-3 py-2.5 text-left text-sm hover:bg-muted/70 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                            >
+                              <span className="font-medium">{customer.name}</span>
+                              {customer.business_id ? (
+                                <span className="text-muted-foreground">Y-tunnus {customer.business_id}</span>
+                              ) : null}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )
+                ) : null}
+                {!customerName ? (
+                  <p className="text-sm text-muted-foreground">Asiakasta ei ole vielä valittu.</p>
+                ) : null}
+              </>
+            )}
           </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="customerBusinessId" className={labelClassName}>
-              Y-tunnus
-            </label>
-            <input
-              id="customerBusinessId"
-              name="customerBusinessId"
-              placeholder="1234567-8"
-              value={customerBusinessId}
-              disabled={readOnly}
-              onChange={(event) => setCustomerBusinessId(event.target.value)}
-              className={fieldClassName}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="customerEmail" className={labelClassName}>
-              Sähköposti
-            </label>
-            <input
-              id="customerEmail"
-              name="customerEmail"
-              type="email"
-              value={customerEmail}
-              disabled={readOnly}
-              onChange={(event) => setCustomerEmail(event.target.value)}
-              className={fieldClassName}
-            />
-          </div>
-          <div className="flex flex-col gap-1.5 sm:col-span-2">
-            <label htmlFor="customerAddress" className={labelClassName}>
-              Osoite
-            </label>
-            <textarea
-              id="customerAddress"
-              name="customerAddress"
-              rows={3}
-              value={customerAddress}
-              disabled={readOnly}
-              onChange={(event) => setCustomerAddress(event.target.value)}
-              className={cn(fieldClassName, "h-auto py-2")}
-            />
-          </div>
-        </div>
+        )}
       </section>
 
-      <InvoiceLines rows={rows} readOnly={readOnly} onChange={setRows} />
+      <InvoiceLines rows={rows} readOnly={readOnly} onChange={setRows} products={products} />
 
       {initial.status === "sent" && initial.id ? (
         <Button
@@ -261,38 +330,226 @@ export function InvoiceForm({ initial, notice }: InvoiceFormProps) {
       ) : null}
 
       {readOnly ? null : (
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <Button
-            type="submit"
-            name="intent"
-            value="draft"
-            variant="outline"
-            size="lg"
-            className="h-11 px-4 text-base"
-            disabled={pending}
-          >
-            {pending ? "Tallennetaan…" : "Tallenna luonnos"}
-          </Button>
-          <Button
-            type="submit"
-            name="intent"
-            value="publish"
-            size="lg"
-            className="h-11 px-4 text-base"
-            disabled={pending}
-            onClick={(event) => {
-              const ok = window.confirm(
-                "Julkaistu lasku saa numeron, eikä sitä voi enää muokata. Julkaistaanko lasku?",
-              );
-              if (!ok) {
-                event.preventDefault();
-              }
-            }}
-          >
-            Julkaise ja lähetä
-          </Button>
+        <div className="flex flex-col gap-3 border-t border-border pt-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button
+                type="submit"
+                name="intent"
+                value="draft"
+                variant="outline"
+                size="lg"
+                className="h-11 px-4 text-base"
+                disabled={pending}
+              >
+                Tallenna luonnos
+              </Button>
+              <Button
+                type="submit"
+                name="intent"
+                value="publish"
+                size="lg"
+                className="h-11 px-5 text-base"
+                disabled={pending}
+                onClick={(event) => {
+                  const ok = window.confirm(
+                    "Julkaistu lasku saa numeron, eikä sitä voi enää muokata. Julkaistaanko lasku?",
+                  );
+                  if (!ok) {
+                    event.preventDefault();
+                  }
+                }}
+              >
+                Julkaise ja lähetä
+              </Button>
+            </div>
+            <div className="flex items-center gap-4">
+              {pending ? (
+                <p className="text-sm text-muted-foreground" role="status">
+                  Tallennetaan…
+                </p>
+              ) : notice?.startsWith("Luonnos tallennettiin") ? (
+                <p className="text-sm text-muted-foreground" role="status">
+                  ✓ Tallennettu. Laskunumeroa ei ole vielä annettu.
+                </p>
+              ) : null}
+              {initial.id ? <DeleteDraftDialog formId={deleteFormId} /> : null}
+            </div>
+          </div>
+          <p className="max-w-xl text-sm leading-6 text-muted-foreground">
+            Julkaisu antaa laskunumeron ja lähettää laskun asiakkaan sähköpostiin, jos osoite on tallennettu.
+          </p>
         </div>
       )}
     </form>
+    {initial.id && !readOnly ? (
+      <form id={deleteFormId} action={deleteInvoiceDraft}>
+        <input type="hidden" name="id" value={initial.id} />
+      </form>
+    ) : null}
+    </>
   );
+}
+
+/** Asks before a saved draft is removed. The delete form sits outside the invoice form. */
+function DeleteDraftDialog({ formId }: { formId: string }) {
+  return (
+    <Dialog.Root>
+      <Dialog.Trigger
+        type="button"
+        className={cn(buttonVariants({ variant: "ghost" }), "h-11 px-3 text-sm text-muted-foreground")}
+      >
+        Poista luonnos
+      </Dialog.Trigger>
+      <Dialog.Portal>
+        <Dialog.Backdrop className="fixed inset-0 z-50 bg-black/10 supports-backdrop-filter:backdrop-blur-xs" />
+        <Dialog.Popup className="fixed top-1/2 left-1/2 z-50 w-[min(24rem,calc(100%-2rem))] -translate-x-1/2 -translate-y-1/2 rounded-xl bg-card px-5 py-5 text-foreground ring-1 ring-foreground/10">
+          <Dialog.Title className="text-base font-medium">Poista luonnos</Dialog.Title>
+          <Dialog.Description className="mt-2 text-sm leading-6 text-muted-foreground">
+            Haluatko varmasti poistaa tämän luonnoksen? Sitä ei voi palauttaa.
+          </Dialog.Description>
+          <div className="mt-4 flex justify-end gap-2">
+            <Dialog.Close
+              type="button"
+              className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-11 px-4 text-base")}
+            >
+              Peruuta
+            </Dialog.Close>
+            <button
+              type="submit"
+              form={formId}
+              className={cn(buttonVariants({ variant: "destructive", size: "lg" }), "h-11 px-4 text-base")}
+            >
+              Poista
+            </button>
+          </div>
+        </Dialog.Popup>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
+function SelectedCustomer({
+  name,
+  businessId,
+  email,
+  address,
+  customer,
+  editHref,
+  onReplace,
+}: {
+  name: string;
+  businessId: string;
+  email: string;
+  address: string;
+  customer: Customer | null;
+  editHref: string | null;
+  onReplace: () => void;
+}) {
+  return (
+    <div>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-medium">✓ {name}</p>
+          {businessId ? (
+            <p className="mt-0.5 text-sm text-muted-foreground">Y-tunnus {businessId}</p>
+          ) : null}
+        </div>
+        <div className="flex shrink-0 items-center gap-3 text-sm">
+          {editHref ? (
+            <Link
+              href={editHref}
+              className="text-muted-foreground underline-offset-4 hover:text-foreground hover:underline"
+            >
+              Muokkaa
+            </Link>
+          ) : null}
+          <button
+            type="button"
+            onClick={onReplace}
+            className="font-medium text-foreground underline-offset-4 hover:underline"
+          >
+            Vaihda
+          </button>
+        </div>
+      </div>
+      <CustomerSnapshot
+        name={name}
+        businessId={businessId}
+        email={email}
+        address={address}
+        customer={customer}
+        showIdentity={false}
+        className="mt-3"
+      />
+    </div>
+  );
+}
+
+function CustomerSnapshot({
+  name,
+  businessId,
+  email,
+  address,
+  customer,
+  showIdentity = true,
+  className,
+}: {
+  name: string;
+  businessId: string;
+  email: string;
+  address: string;
+  customer: Customer | null;
+  showIdentity?: boolean;
+  className?: string;
+}) {
+  const stored = splitStoredAddress(address);
+  const street = customer?.address?.trim() || stored.street;
+  const cityLine =
+    [customer?.postal_code, customer?.city].filter(Boolean).join(" ") || stored.cityLine;
+  const country = customer?.country?.trim() || stored.country;
+
+  return (
+    <dl className={cn("grid gap-x-8 gap-y-1.5 text-sm sm:grid-cols-2", className)}>
+      {showIdentity ? (
+        <div className="sm:col-span-2">
+          <dt className="sr-only">Nimi</dt>
+          <dd className="font-medium">{name}</dd>
+        </div>
+      ) : null}
+      {showIdentity && businessId ? <CustomerDetail label="Y-tunnus" value={businessId} /> : null}
+      {email ? <CustomerDetail label="Sähköposti" value={email} /> : null}
+      {street ? <CustomerDetail label="Osoite" value={street} /> : null}
+      {cityLine ? <CustomerDetail label="Postinumero ja kaupunki" value={cityLine} /> : null}
+      {country ? <CustomerDetail label="Maa" value={country} /> : null}
+    </dl>
+  );
+}
+
+function CustomerDetail({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="min-w-0">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="break-words">{value}</dd>
+    </div>
+  );
+}
+
+/** The invoice stores the address as street, postal line, then country. */
+function splitStoredAddress(address: string): {
+  street: string;
+  cityLine: string;
+  country: string;
+} {
+  const lines = address
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+  if (lines.length >= 3) {
+    return { street: lines[0], cityLine: lines[1], country: lines.slice(2).join(" ") };
+  }
+  if (lines.length === 2) {
+    return { street: lines[0], cityLine: lines[1], country: "" };
+  }
+  return { street: lines[0] ?? "", cityLine: "", country: "" };
 }

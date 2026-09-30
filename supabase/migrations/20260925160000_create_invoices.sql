@@ -204,6 +204,13 @@ begin
   from public.invoices
   where id = parent_id;
 
+  -- Deleting a draft removes its lines in the same step. By then the invoice
+  -- row is already gone, so this lookup finds no status. That delete is allowed.
+  -- A published invoice is stopped earlier and never reaches this line.
+  if parent_status is null and tg_op = 'DELETE' then
+    return old;
+  end if;
+
   if parent_status is distinct from 'draft' then
     raise exception 'Julkaistun laskun rivejä ei voi muuttaa.';
   end if;

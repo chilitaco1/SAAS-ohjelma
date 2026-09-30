@@ -2,11 +2,11 @@ import Link from "next/link";
 
 import { CreateInvoiceLink } from "@/components/create-invoice-link";
 import { EmptyState } from "@/components/empty-state";
+import { InvoiceStatusBadge } from "@/components/invoices/invoice-status-badge";
 import { PageHeader } from "@/components/page-header";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { decimalToScaled, formatFinnishDate, todayInHelsinki } from "@/lib/invoices/calculate";
 import { listInvoices } from "@/lib/invoices/queries";
-import { invoiceStatusLabel } from "@/lib/invoices/types";
 import { formatEuro } from "@/lib/money";
 
 export default async function DashboardPage() {
@@ -23,10 +23,7 @@ export default async function DashboardPage() {
     )
     .reduce((sum, invoice) => sum + decimalToScaled(invoice.total_including_vat, 2), 0);
 
-  const openCount = invoices.filter(
-    (invoice) =>
-      invoice.status === "sent" && (!invoice.due_date || invoice.due_date >= today),
-  ).length;
+  const openCount = invoices.filter((invoice) => invoice.status === "sent").length;
 
   const overdueCount = invoices.filter(
     (invoice) =>
@@ -116,9 +113,12 @@ export default async function DashboardPage() {
                         {" "}
                         · {invoice.customer_name ?? "Ei asiakasta"}
                         {invoice.issue_date ? ` · ${formatFinnishDate(invoice.issue_date)}` : ""}
-                        {" · "}
-                        {invoiceStatusLabel[invoice.status]}
-                      </span>
+                      </span>{" "}
+                      <InvoiceStatusBadge
+                        status={invoice.status}
+                        dueDate={invoice.due_date}
+                        today={today}
+                      />
                     </span>
                     <span className="font-medium tabular-nums">
                       {formatEuro(decimalToScaled(invoice.total_including_vat, 2))}

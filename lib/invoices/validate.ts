@@ -31,6 +31,7 @@ export type InvoiceFormInput = {
   deliveryDate: string;
   interestRate: string;
   customerName: string;
+  customerId: string;
   customerBusinessId: string;
   customerAddress: string;
   customerEmail: string;
@@ -53,6 +54,7 @@ export type DraftPayload = {
   interestRate: string | null;
   deliveryDate: string | null;
   customerName: string | null;
+  customerId: string | null;
   customerBusinessId: string | null;
   customerAddress: string | null;
   customerEmail: string | null;
@@ -204,8 +206,8 @@ export function parseInvoiceForm(input: InvoiceFormInput): ParsedInvoiceForm {
   if (interestRate === null) {
     publishProblems.push("lisää viivästyskorko (0 jos et peri korkoa)");
   }
-  if (!emptyToNull(input.customerName)) {
-    publishProblems.push("lisää asiakkaan nimi");
+  if (!emptyToNull(input.customerName) || !emptyToNull(input.customerId)) {
+    publishProblems.push("valitse asiakas");
   }
   if (parsedRows.length === 0) {
     publishProblems.push("lisää vähintään yksi laskurivi");
@@ -220,6 +222,9 @@ export function parseInvoiceForm(input: InvoiceFormInput): ParsedInvoiceForm {
       interestRate,
       deliveryDate,
       customerName: emptyToNull(input.customerName),
+      customerId: /^[0-9a-f-]{36}$/i.test(input.customerId.trim())
+        ? input.customerId.trim()
+        : null,
       customerBusinessId,
       customerAddress: emptyToNull(input.customerAddress),
       customerEmail,

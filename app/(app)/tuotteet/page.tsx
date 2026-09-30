@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 
-import { EmptyState } from "@/components/empty-state";
 import { PageHeader } from "@/components/page-header";
+import { ProductManager } from "@/components/products/product-manager";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { listProducts } from "@/lib/catalog/queries";
+import { getCompanySettings } from "@/lib/invoices/queries";
 import { formatEuro } from "@/lib/money";
 
 export const metadata: Metadata = {
@@ -15,25 +17,29 @@ const examples = [
   { name: "Ylläpito", price: formatEuro(10_000), unit: "kk", vat: "25,5 %" },
 ];
 
-export default function ProductsPage() {
+export default async function ProductsPage() {
+  const [products, company] = await Promise.all([listProducts(), getCompanySettings()]);
+  const defaultVat = company?.vat_registered === false ? "0" : "25.5";
+
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
         title="Tuotteet"
         description="Tänne tallennat tuotteet ja palvelut, joita käytät uudelleen laskuriveillä."
       />
-      <EmptyState title="Ei vielä tuotteita">
-        Tuotteella on nimi, kuvaus, hinta ilman ALV:tä, ALV-prosentti ja
-        yksikkö. Kun lisäät tuotteen laskulle, lasku muistaa sen hetkisen
-        hinnan, vaikka muuttaisit tuotetta myöhemmin.
-      </EmptyState>
+      <ProductManager
+        products={products.items}
+        missing={products.missing}
+        defaultVat={defaultVat}
+      />
 
       <section className="flex flex-col gap-3">
         <div>
           <h2 className="text-base font-medium">Esimerkkejä</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Näitä ei ole tallennettu. Ne näyttävät, miltä tuote tulee
-            näyttämään.
+            Näitä ei ole tallennettu. Ne näyttävät, miltä tuote tulee näyttämään. Kun lisäät
+            tuotteen laskulle, lasku muistaa sen hetkisen hinnan, vaikka muuttaisit tuotetta
+            myöhemmin.
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-3">

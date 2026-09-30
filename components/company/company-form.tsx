@@ -99,6 +99,15 @@ export function CompanyForm({ company }: CompanyFormProps) {
             className={cn(fieldClassName, "h-auto py-2")}
           />
         </div>
+        <label className="flex items-center gap-2 text-sm sm:col-span-2">
+          <input
+            type="checkbox"
+            name="vatRegistered"
+            defaultChecked={company?.vat_registered !== false}
+            className="size-4 accent-primary"
+          />
+          ALV-velvollinen (uusien tuotteiden oletus on 25,5 %)
+        </label>
       </div>
 
       <Button type="submit" size="lg" className="h-11 w-fit px-4 text-base" disabled={pending}>

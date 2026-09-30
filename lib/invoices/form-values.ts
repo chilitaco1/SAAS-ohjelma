@@ -17,6 +17,7 @@ export type InvoiceFormValues = {
   deliveryDate: string;
   interestRate: string;
   customerName: string;
+  customerId: string;
   customerBusinessId: string;
   customerAddress: string;
   customerEmail: string;
@@ -30,6 +31,8 @@ export type InvoiceFormRow = {
   unit: string;
   unitPrice: string;
   vatPercentage: VatRate;
+  /** Which saved product filled this row. Not stored on the invoice. */
+  productId?: string;
 };
 
 function moneyInput(value: string | number | null): string {
@@ -64,6 +67,7 @@ export function blankInvoiceForm(): InvoiceFormValues {
     deliveryDate: "",
     interestRate: "",
     customerName: "",
+    customerId: "",
     customerBusinessId: "",
     customerAddress: "",
     customerEmail: "",
@@ -103,6 +107,7 @@ export function invoiceToForm(invoice: InvoiceWithItems): InvoiceFormValues {
     deliveryDate: invoice.delivery_date ?? "",
     interestRate: moneyInput(invoice.interest_rate),
     customerName: invoice.customer_name ?? "",
+    customerId: invoice.customer_id ?? "",
     customerBusinessId: invoice.customer_y_tunus ?? "",
     customerAddress: invoice.customer_address ?? "",
     customerEmail: invoice.customer_email ?? "",

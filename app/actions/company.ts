@@ -45,6 +45,7 @@ export async function saveCompanySettings(
   const iban = readText(formData, "iban").replace(/\s/g, "").toUpperCase();
   const bic = readText(formData, "bic").replace(/\s/g, "").toUpperCase();
   const billingAddress = readText(formData, "billingAddress");
+  const vatRegistered = formData.get("vatRegistered") === "on";
 
   if (!companyName) {
     return { error: "Anna yrityksen nimi." };
@@ -68,18 +69,32 @@ export async function saveCompanySettings(
     redirect("/login");
   }
 
-  const { error } = await supabase.from("company_settings").upsert(
-    {
-      user_id: user.id,
-      company_name: companyName,
-      y_tunus: emptyToNull(businessId),
-      iban: emptyToNull(iban),
-      bic_swift: emptyToNull(bic),
-      billing_address: emptyToNull(billingAddress),
-      updated_at: new Date().toISOString(),
-    },
+  const payload = {
+    user_id: user.id,
+    company_name: companyName,
+    y_tunus: emptyToNull(businessId),
+    iban: emptyToNull(iban),
+    bic_swift: emptyToNull(bic),
+    billing_address: emptyToNull(billingAddress),
+    updated_at: new Date().toISOString(),
+  };
+
+  let { error } = await supabase.from("company_settings").upsert(
+    { ...payload, vat_registered: vatRegistered },
     { onConflict: "user_id" },
   );
+
+  if (error && /vat_registered/i.test(error.message)) {
+    const retry = await supabase.from("company_settings").upsert(payload, { onConflict: "user_id" });
+    error = retry.error;
+    if (!error) {
+      await supabase.rpc("attach_seller_snapshot");
+      return {
+        success:
+          "Yritystiedot tallennettiin. ALV-valinta tallentuu, kun ajat tiedoston supabase/migrations/20260927200000_customers_products.sql.",
+      };
+    }
+  }
 
   if (error) {
     return { error: friendlyError(error.message) };
